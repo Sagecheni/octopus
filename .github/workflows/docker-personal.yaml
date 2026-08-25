@@ -1,0 +1,133 @@
+name: personal-docker
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: personal-docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker:
+    name: Build personal Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          BASE_VERSION="$(git describe --tags --abbrev=0 2>/dev/null || echo v0.0.0)"
+          if [[ "${BASE_VERSION}" == *-performance ]]; then
+            VERSION="${BASE_VERSION}"
+          else
+            VERSION="${BASE_VERSION}-performance"
+          fi
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "short_sha=${GITHUB_SHA::7}" >> "${GITHUB_OUTPUT}"
+          echo "build_time=$(TZ=Asia/Shanghai date +'%FT%T%z')" >> "${GITHUB_OUTPUT}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: latest
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.10.0
+          cache: true
+          cache_dependency_path: web/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: web
+        run: pnpm build
+        env:
+          VITE_APP_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build Docker binaries
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD_TIME: ${{ steps.version.outputs.build_time }}
+          COMMIT: ${{ steps.version.outputs.short_sha }}
+          AUTHOR: ${{ github.actor }}
+        run: |
+          mkdir -p \
+            build/docker/linux/amd64 \
+            build/docker/linux/386 \
+            build/docker/linux/arm64 \
+            build/docker/linux/arm/v7
+
+          LDFLAGS="-X 'github.com/bestruirui/octopus/internal/conf.Version=${VERSION}' \
+            -X 'github.com/bestruirui/octopus/internal/conf.BuildTime=${BUILD_TIME}' \
+            -X 'github.com/bestruirui/octopus/internal/conf.Author=${AUTHOR}' \
+            -X 'github.com/bestruirui/octopus/internal/conf.Commit=${COMMIT}' \
+            -s -w"
+
+          build() {
+            local arch="${1}"
+            local output="${2}"
+            shift 2
+            env GOOS=linux GOARCH="${arch}" CGO_ENABLED=0 "${@}" \
+              go build -trimpath -tags=jsoniter -ldflags="${LDFLAGS}" -o "${output}" .
+          }
+
+          build amd64 build/docker/linux/amd64/octopus
+          build 386 build/docker/linux/386/octopus
+          build arm64 build/docker/linux/arm64/octopus
+          build arm build/docker/linux/arm/v7/octopus GOARM=7
+
+          GOFLAGS=-tags=jsoniter go run github.com/google/go-licenses/v2@v2.0.1 report . \
+            --ignore github.com/bestruirui/octopus > build/THIRD_PARTY_LICENSES.csv
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=${{ steps.version.outputs.short_sha }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./scripts/dockerfile/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/386,linux/arm64,linux/arm/v7
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=personal-docker
+          cache-to: type=gha,mode=max,scope=personal-docker
