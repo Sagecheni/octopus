@@ -22,6 +22,8 @@ export interface RelayLogOverview {
     status: RequestState;
     started_at: string;
     duration: number;
+    first_token_duration: number;
+    output_tokens_per_second: number;
     model: string;
     usage: RelayUsage;
     cost: number;

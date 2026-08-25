@@ -425,6 +425,8 @@
             "noRequestContent": "(No request content)",
             "noResponseContent": "(No response content)",
             "tokens": "tokens",
+            "firstToken": "First token",
+            "outputSpeed": "Output speed",
             "retryIndex": "Retry {index}",
             "retryDetails": "Retry Details",
             "stopRound": "Stop Current Round",

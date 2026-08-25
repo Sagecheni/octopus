@@ -234,7 +234,7 @@ func Forward(format llm.APIFormat) gin.HandlerFunc {
 				metrics.RequestSuccess = 1
 				_ = op.ChannelStatsUpdate(channel.ID, metrics)
 				_ = op.ChannelModelStatsUpdate(channelModel.ID, metrics)
-				request.markCommitted()
+				request.markCommitted(false)
 				n, err := c.Writer.Write(result.body)
 				if err == nil && n != len(result.body) {
 					err = io.ErrShortWrite
@@ -270,7 +270,7 @@ func Forward(format llm.APIFormat) gin.HandlerFunc {
 						break
 					}
 					if !committed {
-						request.markCommitted()
+						request.markCommitted(true)
 						committed = true
 					}
 					n, writeErr := c.Writer.Write(encoded.Bytes())
@@ -282,6 +282,9 @@ func Forward(format llm.APIFormat) gin.HandlerFunc {
 						break
 					}
 					c.Writer.Flush()
+					if streamEventHasText(format, event) {
+						request.markFirstToken()
+					}
 				}
 				if last {
 					break
