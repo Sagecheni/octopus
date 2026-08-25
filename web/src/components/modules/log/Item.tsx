@@ -53,11 +53,12 @@ function LogMetrics({ log, now, brandColor, variant }: { log: RelayLogOverview; 
     const duration = log.status === 'running' || log.status === 'committed'
         ? formatMilliseconds(now - new Date(log.started_at).getTime())
         : formatMilliseconds(log.duration / 1_000_000);
-    const firstTokenDuration = log.first_token_duration > 0
-        ? formatMilliseconds(log.first_token_duration / 1_000_000)
+    const firstTokenDuration = log.first_text_duration > 0
+        ? formatMilliseconds(log.first_text_duration / 1_000_000)
         : '--';
-    const outputSpeed = log.output_tokens_per_second > 0
-        ? `${log.output_tokens_per_second.toFixed(1)} t/s`
+    const generationSeconds = (log.duration - log.first_text_duration) / 1_000_000_000;
+    const outputSpeed = log.first_text_duration > 0 && log.usage.completion_tokens > 0 && generationSeconds > 0
+        ? `${(log.usage.completion_tokens / generationSeconds).toFixed(1)} t/s`
         : '--';
     const metrics = [
         { key: 'time', Icon: Clock, iconClassName: 'size-3.5 shrink-0', iconStyle: { color: brandColor } as CSSProperties, value: formatTime(log.started_at), valueClassName: 'tabular-nums', cellClassName: 'col-span-4 whitespace-nowrap md:col-span-1' },

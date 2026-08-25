@@ -234,7 +234,7 @@ func Forward(format llm.APIFormat) gin.HandlerFunc {
 				metrics.RequestSuccess = 1
 				_ = op.ChannelStatsUpdate(channel.ID, metrics)
 				_ = op.ChannelModelStatsUpdate(channelModel.ID, metrics)
-				request.markCommitted(false)
+				request.markCommitted()
 				n, err := c.Writer.Write(result.body)
 				if err == nil && n != len(result.body) {
 					err = io.ErrShortWrite
@@ -261,6 +261,7 @@ func Forward(format llm.APIFormat) gin.HandlerFunc {
 			event := result.first
 			last := result.last // 已转发的最后一个事件是否已按客户端协议结束整个响应流。
 			committed := false
+			firstTextWritten := false
 			for {
 				if event != nil {
 					chunks = append(chunks, event)
@@ -270,7 +271,7 @@ func Forward(format llm.APIFormat) gin.HandlerFunc {
 						break
 					}
 					if !committed {
-						request.markCommitted(true)
+						request.markCommitted()
 						committed = true
 					}
 					n, writeErr := c.Writer.Write(encoded.Bytes())
@@ -282,8 +283,9 @@ func Forward(format llm.APIFormat) gin.HandlerFunc {
 						break
 					}
 					c.Writer.Flush()
-					if streamEventHasText(format, event) {
-						request.markFirstToken()
+					if !firstTextWritten && streamEventHasText(format, event) {
+						request.markFirstText()
+						firstTextWritten = true
 					}
 				}
 				if last {

@@ -18,8 +18,8 @@ export function SettingInfo() {
     const backendNowVersion = nowVersionQuery.data || '';
     const latestVersion = latestInfoQuery.data?.tag_name || '';
 
-    // 前端版本与后端当前版本不一致 → 浏览器缓存问题
-    const isCacheMismatch = !!backendNowVersion && backendNowVersion !== APP_VERSION;
+    // 仅在构建版本已注入时判断缓存问题; unknown 表示构建元数据缺失，不是缓存不一致。
+    const isCacheMismatch = APP_VERSION !== 'unknown' && !!backendNowVersion && backendNowVersion !== APP_VERSION;
     // 最新版本与后端当前版本不一致 → 有新版本可更新
     const hasNewVersion = latestVersion && backendNowVersion && latestVersion !== backendNowVersion;
 

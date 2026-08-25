@@ -25,15 +25,14 @@ const (
 
 // 客户端请求的完整进程内状态, 同时作为状态流的消息形状; 上半部分在请求到达时写入并在结束时定稿, 下半部分每轮循环覆盖。
 type RequestState struct {
-	ID                    uint64        `json:"id"`                       // 请求在当前进程内的唯一标识。
-	Status                Status        `json:"status"`                   // 请求当前状态。
-	StartedAt             time.Time     `json:"started_at"`               // 请求到达时间。
-	Duration              time.Duration `json:"duration"`                 // 请求总耗时, 未结束时为零。
-	FirstTokenDuration    time.Duration `json:"first_token_duration"`     // 首次向客户端写出有效文本的耗时。
-	OutputTokensPerSecond float64       `json:"output_tokens_per_second"` // 首字后按完成 Token 计算的输出速度。
-	Model                 string        `json:"model"`                    // 客户端请求的模型名称, 即分组名称。
-	Usage                 llm.Usage     `json:"usage"`                    // 请求结束时写入的展示用量。
-	Cost                  float64       `json:"cost"`                     // 请求结束时写入的累计费用。
+	ID                uint64        `json:"id"`                  // 请求在当前进程内的唯一标识。
+	Status            Status        `json:"status"`              // 请求当前状态。
+	StartedAt         time.Time     `json:"started_at"`          // 请求到达时间。
+	Duration          time.Duration `json:"duration"`            // 请求总耗时, 未结束时为零。
+	FirstTextDuration time.Duration `json:"first_text_duration"` // 首次向客户端写出有效文本的耗时。
+	Model             string        `json:"model"`               // 客户端请求的模型名称, 即分组名称。
+	Usage             llm.Usage     `json:"usage"`               // 请求结束时写入的展示用量。
+	Cost              float64       `json:"cost"`                // 请求结束时写入的累计费用。
 
 	Round         int    `json:"round"`           // 最新一轮循环的递增序号, 人工中止按此匹配以免误杀下一轮。
 	TargetChannel string `json:"target_channel"`  // 最新一轮选中的渠道名称。
@@ -44,7 +43,6 @@ type RequestState struct {
 	body         string             // 客户端原始请求体, 体积大故不进状态流, 由独立接口按需拉取。
 	responseBody string             // 聚合后的完整最终响应体, 同样按需拉取。
 	apiKeyID     int                // 发起请求的 API Key ID, 用于请求完成后的归属统计。
-	streaming    bool               // 是否为流式响应, 非流式响应不计算生成速度。
 	cancel       context.CancelFunc // 中止最新一轮上游请求, 仅在该轮等待响应期间非空。
 }
 
@@ -129,24 +127,23 @@ func (r *RequestState) wait(ctx context.Context, seconds int) bool {
 }
 
 // markCommitted 标记响应已提交; 流式响应在此之后仍会持续转发, 故必须先于提交动作调用。
-func (r *RequestState) markCommitted(streaming bool) {
+func (r *RequestState) markCommitted() {
 	mu.Lock()
 	defer mu.Unlock()
 
 	r.Status = StatusCommitted
-	r.streaming = streaming
 	publishRequestLocked(r)
 }
 
-// markFirstToken 记录首个有效文本已经刷新给客户端; 元数据事件不算首字。
-func (r *RequestState) markFirstToken() {
+// markFirstText 记录首个有效文本已经刷新给客户端; 元数据事件不算首字。
+func (r *RequestState) markFirstText() {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if r.FirstTokenDuration != 0 {
+	if r.FirstTextDuration != 0 {
 		return
 	}
-	r.FirstTokenDuration = time.Since(r.StartedAt)
+	r.FirstTextDuration = time.Since(r.StartedAt)
 	publishRequestLocked(r)
 }
 
@@ -197,12 +194,6 @@ func (r *RequestState) finishLocked(usage *llm.Usage) {
 	metrics := usageMetrics(r.TargetModel, usage)
 	r.Cost = metrics.InputCost + metrics.OutputCost
 	r.Duration = time.Since(r.StartedAt)
-	if r.streaming && r.FirstTokenDuration > 0 && usage != nil && usage.CompletionTokens > 0 {
-		generationDuration := r.Duration - r.FirstTokenDuration
-		if generationDuration > 0 {
-			r.OutputTokensPerSecond = float64(usage.CompletionTokens) / generationDuration.Seconds()
-		}
-	}
 	metrics.WaitTime = r.Duration.Milliseconds()
 	if r.Status == StatusSuccess {
 		metrics.RequestSuccess = 1
