@@ -47,6 +47,8 @@
         "setting": "設定"
     },
     "toolbar": {
+        "hideChannelName": "模糊渠道名稱",
+        "share": "分享",
         "popover": {
             "ariaLabel": "檢視選項",
             "layout": "佈局",
@@ -83,6 +85,11 @@
         }
     },
     "home": {
+        "metric": {
+            "cost": "金額",
+            "count": "次數",
+            "tokens": "詞元"
+        },
         "activity": {
             "requestCount": "請求次數",
             "waitTime": "消耗時間",
@@ -110,11 +117,6 @@
             "totalCost": "消費金額",
             "totalTokens": "詞元消耗",
             "timePeriod": "時間週期",
-            "metricType": {
-                "cost": "金額",
-                "count": "次數",
-                "tokens": "詞元"
-            },
             "period": {
                 "today": "今天",
                 "last7Days": "7天",
@@ -124,9 +126,6 @@
         "rank": {
             "channel": "渠道",
             "model": "模型",
-            "sortByCost": "金額",
-            "sortByCount": "次數",
-            "sortByTokens": "詞元",
             "noData": "暫無排行數據",
             "successRate": "成功率"
         }
@@ -163,7 +162,6 @@
         "backup": {
             "title": "備份 / 復原",
             "export": {
-                "title": "匯出",
                 "button": "匯出",
                 "exporting": "匯出中...",
                 "success": "開始匯出"
@@ -246,26 +244,11 @@
                 "failed": "價格資料重建失敗"
             }
         },
-        "llmSync": {
-            "title": "供應源同步",
-            "syncInterval": {
-                "label": "自動同步間隔（小時）",
-                "placeholder": "請輸入間隔（小時）"
-            },
-            "manualSync": {
-                "label": "手動同步供應源",
-                "button": "立即同步",
-                "syncing": "同步中..."
-            },
-            "lastSync": "上次同步",
-            "neverSynced": "從未同步",
-            "syncSuccess": "供應源同步成功",
-            "syncFailed": "供應源同步失敗"
-        },
         "account": {
             "title": "帳戶設定",
             "save": "儲存",
             "saving": "儲存中...",
+            "cancel": "取消",
             "username": {
                 "label": "修改使用者名稱",
                 "placeholder": "請輸入新使用者名稱",
@@ -322,7 +305,6 @@
             "deleted": "刪除成功"
         },
         "create": {
-            "title": "建立分組",
             "submit": "建立",
             "submitting": "建立中..."
         },
@@ -334,11 +316,8 @@
         },
         "detail": {
             "actions": {
-                "edit": "編輯",
                 "cancel": "取消",
                 "save": "儲存",
-                "copyName": "複製名稱",
-                "delete": "刪除",
                 "confirmDelete": "確認刪除"
             }
         },
@@ -370,12 +349,12 @@
     },
     "model": {
         "create": {
-            "title": "建立模型",
             "name": "模型名稱",
             "input": "輸入價格",
             "output": "輸出價格",
             "cacheRead": "快取讀取",
             "cacheWrite": "快取寫入",
+            "cancel": "取消",
             "submit": "建立",
             "submitting": "建立中..."
         },
@@ -440,83 +419,72 @@
         "card": {
             "requestCount": "請求次數",
             "totalCost": "總成本",
+            "model": "模型",
+            "successRequests": "成功請求",
+            "failedRequests": "失敗請求",
             "toast": {
                 "enabled": "供應源已啟用",
                 "disabled": "供應源已停用"
             }
         },
-        "detail": {
-            "title": {
-                "edit": "編輯供應源",
-                "view": "供應源詳情"
-            },
-            "sections": {
-                "requests": "請求詳情",
-                "tokens": "詞元使用",
-                "costs": "成本詳情"
-            },
-            "metrics": {
-                "totalRequests": "總請求",
-                "totalToken": "總詞元",
-                "totalCost": "總成本",
-                "successRequests": "成功請求",
-                "failedRequests": "失敗請求",
-                "inputToken": "輸入詞元",
-                "outputToken": "輸出詞元",
-                "inputCost": "輸入成本",
-                "outputCost": "輸出成本",
-                "avgWaitTime": "等待時間"
-            },
-            "actions": {
-                "edit": "編輯",
-                "cancel": "取消",
-                "save": "儲存",
-                "saving": "儲存中...",
-                "delete": "刪除",
-                "confirmDelete": "確認刪除",
-                "deleting": "刪除中..."
-            }
-        },
-        "create": {
-            "dialogTitle": "建立新供應源",
-            "submit": "建立供應源",
-            "submitting": "建立中..."
+        "stats": {
+            "totalRequests": "總請求",
+            "totalToken": "總詞元",
+            "totalCost": "總成本",
+            "avgWaitTime": "等待時間",
+            "models": "模型",
+            "noModels": "暫未選擇模型",
+            "sortByCost": "金額",
+            "sortByCount": "次數",
+            "sortByTokens": "詞元",
+            "edit": "編輯",
+            "delete": "刪除",
+            "confirmDelete": "確認刪除",
+            "cancel": "取消"
         },
         "form": {
-            "name": "供應源名稱",
-            "type": "供應源類型",
+            "stepPreset": "開始",
+            "stepConnection": "連線",
+            "stepKeys": "憑證",
+            "stepGrants": "模型",
+            "stepAdvanced": "進階",
+            "name": "通道名稱",
             "baseUrl": "Base URL",
-            "baseUrlUrl": "地址",
-            "advanced": "進階設定",
             "apiKey": "API Key",
-            "customHeader": "自定義 Header",
+            "enabled": "啟用",
+            "proxy": "使用代理",
+            "keys": "憑證",
+            "keyAdd": "新增憑證",
+            "keyName": "名稱",
+            "keyEmpty": "未填寫",
+            "keysRequiredFirst": "請先新增憑證",
+            "detailLoading": "正在載入通道設定",
+            "detailFailed": "通道設定載入失敗",
+            "grantExpandAll": "全部展開",
+            "grantCollapseAll": "全部折疊",
+            "modelAdd": "新增",
+            "modelCustomPlaceholder": "模型名稱",
+            "modelRefresh": "拉取",
+            "modelNoSelected": "暫無模型",
+            "modelRefreshSuccess": "已拉取 {count} 個模型",
+            "modelRefreshFailed": "拉取失敗",
+            "modelRefreshEmpty": "未取得模型",
+            "channelProxy": "通道代理",
+            "matchRegex": "匹配正則",
+            "paramOverride": "參數覆寫",
+            "customHeader": "自訂 Header",
             "customHeaderKey": "Header Key",
             "customHeaderValue": "Header Value",
             "customHeaderAdd": "新增 Header",
-            "channelProxy": "供應源代理",
-            "channelProxyPlaceholder": "可選：僅對該供應源生效（覆蓋全域代理）",
-            "paramOverride": "參數覆蓋",
-            "paramOverridePlaceholder": "可選：JSON 字串，用於覆蓋請求參數",
-            "model": "模型",
-            "enabled": "啟用",
-            "proxy": "使用代理",
-            "modelCustomPlaceholder": "自定義模型名稱",
-            "modelAdd": "新增",
-            "modelRefresh": "重新整理",
-            "modelRefreshSuccess": "模型列表獲取成功",
-            "modelRefreshFailed": "模型列表獲取失敗",
-            "modelRefreshEmpty": "未獲取到模型列表",
-            "modelSelected": "已選模型",
-            "modelNoSelected": "暫未選擇模型",
-            "modelClearAll": "清除全部",
-            "typeOpenAIChat": "OpenAI Chat",
-            "typeOpenAIResponse": "OpenAI Response",
-            "typeAnthropic": "Anthropic",
-            "typeGemini": "Gemini",
-            "typeVolcengine": "火山引擎",
-            "autoSync": "自動同步",
-            "matchRegex": "匹配正規",
-            "matchRegexPlaceholder": "可選：用於匹配請求模型名稱的正規表示式"
+            "edit": "編輯",
+            "delete": "刪除",
+            "submit": "建立",
+            "save": "儲存",
+            "cancel": "取消",
+            "backToStats": "返回統計",
+            "grantClearAll": "清空全部模型",
+            "modelRemove": "移除模型",
+            "grantRemove": "移除該憑據的授權"
         }
     }
 }
