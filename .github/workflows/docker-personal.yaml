@@ -29,7 +29,7 @@ jobs:
             echo "main.go does not declare // Version" >&2
             exit 1
           fi
-          VERSION="${BASE_VERSION}-performance"
+          VERSION="${BASE_VERSION}"
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
           echo "short_sha=${GITHUB_SHA::7}" >> "${GITHUB_OUTPUT}"
           echo "build_time=$(TZ=Asia/Shanghai date +'%FT%T%z')" >> "${GITHUB_OUTPUT}"
